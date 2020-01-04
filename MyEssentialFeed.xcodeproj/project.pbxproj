@@ -9,7 +9,6 @@
 /* Begin PBXBuildFile section */
 		324E697023C0E310009836AD /* RemoteFeedLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 324E696F23C0E310009836AD /* RemoteFeedLoader.swift */; };
 		32B6CD8123B7C9EC000D1862 /* MyEssentialFeed.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 32B6CD7723B7C9EB000D1862 /* MyEssentialFeed.framework */; };
-		32B6CD8823B7C9EC000D1862 /* MyEssentialFeed.h in Headers */ = {isa = PBXBuildFile; fileRef = 32B6CD7A23B7C9EB000D1862 /* MyEssentialFeed.h */; settings = {ATTRIBUTES = (Public, ); }; };
 		32B6CD9223B7CA1F000D1862 /* FeedItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B6CD9123B7CA1F000D1862 /* FeedItem.swift */; };
 		32B6CD9423B7CA8D000D1862 /* FeedLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32B6CD9323B7CA8D000D1862 /* FeedLoader.swift */; };
 		32C3C4BB23BAB62C005E702A /* RemoteFeedLoaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32C3C4BA23BAB62C005E702A /* RemoteFeedLoaderTests.swift */; };
@@ -28,7 +27,6 @@
 /* Begin PBXFileReference section */
 		324E696F23C0E310009836AD /* RemoteFeedLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteFeedLoader.swift; sourceTree = "<group>"; };
 		32B6CD7723B7C9EB000D1862 /* MyEssentialFeed.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MyEssentialFeed.framework; sourceTree = BUILT_PRODUCTS_DIR; };
-		32B6CD7A23B7C9EB000D1862 /* MyEssentialFeed.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MyEssentialFeed.h; sourceTree = "<group>"; };
 		32B6CD7B23B7C9EB000D1862 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		32B6CD8023B7C9EC000D1862 /* MyEssentialFeedTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MyEssentialFeedTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		32B6CD8723B7C9EC000D1862 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -85,7 +83,6 @@
 		32B6CD7923B7C9EB000D1862 /* MyEssentialFeed */ = {
 			isa = PBXGroup;
 			children = (
-				32B6CD7A23B7C9EB000D1862 /* MyEssentialFeed.h */,
 				32B6CD7B23B7C9EB000D1862 /* Info.plist */,
 				32B6CD9523B7CB1B000D1862 /* Feed Feature */,
 				324E697123C0E315009836AD /* Feed API */,
@@ -118,7 +115,6 @@
 			isa = PBXHeadersBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				32B6CD8823B7C9EC000D1862 /* MyEssentialFeed.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
