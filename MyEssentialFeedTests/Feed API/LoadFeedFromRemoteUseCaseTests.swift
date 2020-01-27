@@ -1,5 +1,5 @@
 //
-//  RemoteFeedLoaderTests.swift
+//  LoadFeedFromRemoteUseCaseTests.swift
 //  MyEssentialFeedTests
 //
 //  Created by Dim on 31.12.2019.
@@ -9,7 +9,7 @@
 import XCTest
 import MyEssentialFeed
 
-class RemoteFeedLoaderTests: XCTestCase {
+class LoadFeedFromRemoteUseCaseTests: XCTestCase {
 
     private class HTTPClientSpy: HTTPClient {
 
