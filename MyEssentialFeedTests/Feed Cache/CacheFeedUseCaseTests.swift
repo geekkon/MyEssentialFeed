@@ -9,36 +9,6 @@
 import XCTest
 import MyEssentialFeed
 
-class LocalFeedLoader {
-
-    private let store: FeedStore
-    private let currentDate: () -> Date
-
-    init(store: FeedStore, currentDate: @escaping () -> Date) {
-        self.store = store
-        self.currentDate = currentDate
-    }
-
-    func save(_ items: [FeedItem], completion: @escaping (Error?) -> Void) {
-        store.deleteCachedFeed { [unowned self] error in
-            if error == nil {
-                self.store.insert(items, timestamp: self.currentDate(), completion: completion)
-            } else {
-                completion(error)
-            }
-        }
-    }
-}
-
-protocol FeedStore {
-
-    typealias DeletionCompletion = (Error?) -> Void
-    typealias InsertionCompletion = (Error?) -> Void
-
-    func deleteCachedFeed(completion: @escaping DeletionCompletion)
-    func insert(_ items: [FeedItem], timestamp: Date, completion: @escaping (Error?) -> Void)
-}
-
 class CacheFeedUseCaseTests: XCTestCase {
 
     class FeedStoreSpy: FeedStore {
@@ -144,6 +114,34 @@ class CacheFeedUseCaseTests: XCTestCase {
             store.completeInsertionSuccessfully()
         })
     }
+
+    func test_save_doesNotDeliverDeletionErrorAfterSUTInstanceHasBeenDeallocated() {
+        let store = FeedStoreSpy()
+        var sut: LocalFeedLoader? = LocalFeedLoader(store: store, currentDate: Date.init)
+
+        var recievedResults = [LocalFeedLoader.SaveResult]()
+        sut?.save([uniqueItem()]) { recievedResults.append($0)}
+
+        sut = nil
+        store.completeDeletion(with: anyNSError())
+
+        XCTAssertTrue(recievedResults.isEmpty)
+    }
+
+    func test_save_doesNotDeliverInsertionErrorAfterSUTInstanceHasBeenDeallocated() {
+        let store = FeedStoreSpy()
+        var sut: LocalFeedLoader? = LocalFeedLoader(store: store, currentDate: Date.init)
+
+        var recievedResults = [LocalFeedLoader.SaveResult]()
+        sut?.save([uniqueItem()]) { recievedResults.append($0)}
+
+        store.completeDeletionSuccessfully()
+        sut = nil
+        store.completeInsertion(with: anyNSError())
+
+        XCTAssertTrue(recievedResults.isEmpty)
+    }
+
 }
 
 private extension CacheFeedUseCaseTests {
