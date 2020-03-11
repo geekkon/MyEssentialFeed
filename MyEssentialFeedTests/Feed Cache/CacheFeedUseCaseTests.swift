@@ -168,23 +168,23 @@ private extension CacheFeedUseCaseTests {
         XCTAssertEqual(recievedError as NSError?, expectedError, file: file, line: line)
     }
 
-    func uniqueItem() -> FeedItem {
-        return FeedItem(
+    func uniqueItem() -> FeedImage {
+        return FeedImage(
             id: UUID(),
             description: "any",
             location: "any",
-            imageURL: anyURL()
+            url: anyURL()
         )
     }
 
-    func uniqueItems() -> (models: [FeedItem], local: [LocalFeedItem]) {
+    func uniqueItems() -> (models: [FeedImage], local: [LocalFeedItem]) {
         let models = [uniqueItem(), uniqueItem()]
         let local = models.map {
             LocalFeedItem(
                 id: $0.id,
                 description: $0.description,
                 location: $0.location,
-                imageURL: $0.imageURL
+                imageURL: $0.url
             )
         }
         return (models: models, local: local)

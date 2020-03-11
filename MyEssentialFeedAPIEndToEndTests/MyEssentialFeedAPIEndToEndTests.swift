@@ -53,12 +53,12 @@ class MyEssentialFeedAPIEndToEndTests: XCTestCase {
         wait(for: [exp], timeout: 5.0)
     }
 
-    private func expectedItem(at index: Int) -> FeedItem {
-        return FeedItem(
+    private func expectedItem(at index: Int) -> FeedImage {
+        return FeedImage(
             id: id(at: index),
             description: description(at: index),
             location: location(at: index),
-            imageURL: imageURL(at: index)
+            url: imageURL(at: index)
         )
     }
 
