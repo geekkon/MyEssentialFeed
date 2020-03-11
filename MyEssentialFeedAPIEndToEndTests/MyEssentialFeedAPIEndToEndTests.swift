@@ -14,16 +14,16 @@ class MyEssentialFeedAPIEndToEndTests: XCTestCase {
     func test_endToEndTestServerGETFeedResult_matchesFixedTestAccountData() {
         getFeedResult { result in
             switch result {
-            case .success(let items):
-                XCTAssertEqual(items.count, 8, "Expected 8 items in the test account feed")
-                XCTAssertEqual(items[0], self.expectedItem(at: 0))
-                XCTAssertEqual(items[1], self.expectedItem(at: 1))
-                XCTAssertEqual(items[2], self.expectedItem(at: 2))
-                XCTAssertEqual(items[3], self.expectedItem(at: 3))
-                XCTAssertEqual(items[4], self.expectedItem(at: 4))
-                XCTAssertEqual(items[5], self.expectedItem(at: 5))
-                XCTAssertEqual(items[6], self.expectedItem(at: 6))
-                XCTAssertEqual(items[7], self.expectedItem(at: 7))
+            case .success(let feed):
+                XCTAssertEqual(feed.count, 8, "Expected 8 images in the test account feed")
+                XCTAssertEqual(feed[0], self.expectedImage(at: 0))
+                XCTAssertEqual(feed[1], self.expectedImage(at: 1))
+                XCTAssertEqual(feed[2], self.expectedImage(at: 2))
+                XCTAssertEqual(feed[3], self.expectedImage(at: 3))
+                XCTAssertEqual(feed[4], self.expectedImage(at: 4))
+                XCTAssertEqual(feed[5], self.expectedImage(at: 5))
+                XCTAssertEqual(feed[6], self.expectedImage(at: 6))
+                XCTAssertEqual(feed[7], self.expectedImage(at: 7))
             case .failure(let error):
                 XCTFail("Expected successful feed result, got \(error) instead")
             }
@@ -53,12 +53,12 @@ class MyEssentialFeedAPIEndToEndTests: XCTestCase {
         wait(for: [exp], timeout: 5.0)
     }
 
-    private func expectedItem(at index: Int) -> FeedImage {
+    private func expectedImage(at index: Int) -> FeedImage {
         return FeedImage(
             id: id(at: index),
             description: description(at: index),
             location: location(at: index),
-            url: imageURL(at: index)
+            url: url(at: index)
         )
     }
 
@@ -103,7 +103,7 @@ class MyEssentialFeedAPIEndToEndTests: XCTestCase {
          ][index]
      }
 
-      private func imageURL(at index: Int) -> URL {
+      private func url(at index: Int) -> URL {
          return URL(string: "https://url-\(index + 1).com")!
      }
 }
