@@ -11,45 +11,6 @@ import MyEssentialFeed
 
 class CacheFeedUseCaseTests: XCTestCase {
 
-    class FeedStoreSpy: FeedStore {
-
-        enum RecievedMessage: Equatable {
-            case deleteCachedFeed
-            case insert([LocalFeedImage], Date)
-        }
-
-        private (set) var recievedMessages = [RecievedMessage]()
-
-        private var deletionCompletions = [DeletionCompletion]()
-        private var insertionCompletions = [InsertionCompletion]()
-
-        func deleteCachedFeed(completion: @escaping DeletionCompletion) {
-            deletionCompletions.append(completion)
-            recievedMessages.append(.deleteCachedFeed)
-        }
-
-        func completeDeletion(with error: Error, at index: Int = 0) {
-            deletionCompletions[index](error)
-        }
-
-        func completeDeletionSuccessfully(at index: Int = 0) {
-            deletionCompletions[index](nil)
-        }
-
-        func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping (Error?) -> Void) {
-            insertionCompletions.append(completion)
-            recievedMessages.append(.insert(feed, timestamp))
-        }
-
-        func completeInsertion(with error: Error, at index: Int = 0) {
-            insertionCompletions[index](error)
-        }
-
-        func completeInsertionSuccessfully(at index: Int = 0) {
-            insertionCompletions[index](nil)
-        }
-    }
-
     func test_init_doesNotMessageStoreUponCreation() {
         let (_, store) = makeSUT()
 
@@ -152,7 +113,13 @@ private extension CacheFeedUseCaseTests {
         return (sut: sut, store: store)
     }
 
-    func expect(_ sut: LocalFeedLoader, toCompleteWithError expectedError: NSError?, when action: () -> Void, file: StaticString = #file, line: UInt = #line) {
+    func expect(
+        _ sut: LocalFeedLoader,
+        toCompleteWithError expectedError: NSError?,
+        when action: () -> Void,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
         let exp = expectation(description: "Wait for save completion")
 
         var recievedError: Error?
