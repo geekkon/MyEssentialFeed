@@ -1,0 +1,27 @@
+//
+//  FeedCachePolicy.swift
+//  MyEssentialFeed
+//
+//  Created by Dim on 20.03.2020.
+//  Copyright © 2020 Dmitriy Baklanov. All rights reserved.
+//
+
+import Foundation
+
+internal final class FeedCachePolicy {
+
+    private static let calendar = Calendar(identifier: .gregorian)
+
+    private static var maxCacheAgeInDays: Int {
+        return 7
+    }
+
+    internal static func validate(_ timestamp: Date, against date: Date) -> Bool {
+        guard let maxCacheAge = calendar.date(byAdding: .day, value: maxCacheAgeInDays, to: timestamp) else {
+            return false
+        }
+        return date < maxCacheAge
+    }
+
+    private init() {}
+}
