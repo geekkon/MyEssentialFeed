@@ -9,65 +9,6 @@
 import XCTest
 import MyEssentialFeed
 
-class CodableFeedStore {
-
-    private struct CodableFeedImage: Codable {
-
-        private let id: UUID
-        private let description: String?
-        private let location: String?
-        private let url: URL
-
-        init(_ image: LocalFeedImage) {
-            self.id = image.id
-            self.description = image.description
-            self.location = image.location
-            self.url = image.url
-
-        }
-
-        var local: LocalFeedImage {
-            return LocalFeedImage(
-                id: id,
-                description: description,
-                location: location,
-                url: url
-            )
-        }
-    }
-
-    private struct Cache: Codable {
-
-        let feed: [CodableFeedImage]
-        let timestamp: Date
-
-        var localFeed: [LocalFeedImage] {
-            return feed.map { $0.local }
-        }
-    }
-
-    private let storeURL: URL
-
-    init(storeURL: URL) {
-        self.storeURL = storeURL
-    }
-
-    func insert(_ feed: [LocalFeedImage], timestamp: Date, completion: @escaping FeedStore.InsertionCompletion) {
-        let cache = Cache(feed: feed.map(CodableFeedImage.init), timestamp: timestamp)
-        let data = try! JSONEncoder().encode(cache)
-        try! data.write(to: storeURL)
-        completion(nil)
-    }
-
-    func retrieve(completion: @escaping FeedStore.RetrievalCompletion) {
-        guard let data = try? Data(contentsOf: storeURL) else {
-            return completion(.empty)
-        }
-        let cache = try! JSONDecoder().decode(Cache.self, from: data)
-        completion(.found(feed: cache.localFeed, timestamp: cache.timestamp))
-    }
-}
-
 class CodableFeedStoreTests: XCTestCase {
 
     override func setUp() {
@@ -82,72 +23,175 @@ class CodableFeedStoreTests: XCTestCase {
 
     func test_retrieve_deliversEmptyOnEmptyCache() {
         let sut = makeSUT()
-        let exp = expectation(description: "Wait for cache retrieval")
 
-        sut.retrieve { result in
-            switch result {
-                case .empty:
-                    break
-                default:
-                    XCTFail("Expected empty result, got \(result) insted")
-            }
-            exp.fulfill()
-        }
-
-        wait(for: [exp], timeout: 1.0)
+        expect(sut, toRetrieve: .empty)
     }
 
     func test_retrieve_hasNoSideEffectsOnEmptyCache() {
         let sut = makeSUT()
-        let exp = expectation(description: "Wait for cache retrieval")
 
-        sut.retrieve { firstResult in
-            sut.retrieve { secondResult in
-                switch (firstResult, secondResult) {
-                    case (.empty, .empty):
-                        break
-                    default:
-                        XCTFail("Expected retrieving twice from empty cache to deliver same empty result, got \(firstResult) and \(secondResult) instead")
-                }
-                exp.fulfill()
-            }
-        }
-
-        wait(for: [exp], timeout: 1.0)
+        expect(sut, toRetrieveTwice: .empty)
     }
 
-    func test_retrieveAfterInsertingToEmptyCache_deliversInsertesValues() {
+    func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
         let sut = makeSUT()
         let feed = uniqueImageFeed().local
         let timestamp = Date()
-        let exp = expectation(description: "Wait for cache retrieval")
 
-        sut.insert(feed, timestamp: timestamp) { insertionError in
-            XCTAssertNil(insertionError, "Expected feed to be inserted successfully")
+        insert((feed, timestamp), to: sut)
 
-            sut.retrieve { retrieveResult in
-                switch retrieveResult {
-                    case .found(let retrievedFeed, let retrievedTimestamp):
-                        XCTAssertEqual(retrievedFeed, feed)
-                        XCTAssertEqual(retrievedTimestamp, timestamp)
-                    default:
-                        XCTFail("Expected found result with feed \(feed) and timestamp \(timestamp), got \(retrieveResult) instaed")
+        expect(sut, toRetrieve: .found(feed: feed, timestamp: timestamp))
+    }
 
-                }
-                exp.fulfill()
-            }
-        }
+    func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
+        let sut = makeSUT()
+        let feed = uniqueImageFeed().local
+        let timestamp = Date()
 
-        wait(for: [exp], timeout: 1.0)
+        insert((feed, timestamp), to: sut)
+
+        expect(sut, toRetrieveTwice: .found(feed: feed, timestamp: timestamp))
+    }
+
+    func test_retrieve_deliversFailureOnRetievalError() {
+        let storeURL = testSpecificStoreURL()
+        let sut = makeSUT(storeURL: storeURL)
+
+        try! "invalid data".write(to: storeURL, atomically: false, encoding: .utf8)
+
+        expect(sut, toRetrieve: .failure(anyNSError()))
+    }
+
+    func test_retrieve_hasNoSideEffectsOnFailure() {
+        let storeURL = testSpecificStoreURL()
+        let sut = makeSUT(storeURL: storeURL)
+
+        try! "invalid data".write(to: storeURL, atomically: false, encoding: .utf8)
+
+        expect(sut, toRetrieveTwice: .failure(anyNSError()))
+    }
+
+    func test_insert_overridesPreviouslyInsertedCacheValues() {
+        let sut = makeSUT()
+
+        let firstInsertionError = insert((uniqueImageFeed().local, Date()), to: sut)
+        XCTAssertNil(firstInsertionError, "Expected to insert cache successfully")
+
+        let latestFeed = uniqueImageFeed().local
+        let latestTimestamp = Date()
+        let latestInsertionError = insert((latestFeed, latestTimestamp), to: sut)
+
+        XCTAssertNil(latestInsertionError, "Expected to override cache successfully")
+        expect(sut, toRetrieve: .found(feed: latestFeed, timestamp: latestTimestamp))
+    }
+
+    func test_insert_deliversErrorOnInsertionError() {
+        let invalidStoreURL = URL(string: "invalid://store-url")!
+        let sut = makeSUT(storeURL: invalidStoreURL)
+        let feed = uniqueImageFeed().local
+        let timestamp = Date()
+
+        let insertionError = insert((feed, timestamp), to: sut)
+
+        XCTAssertNotNil(insertionError, "Expected cache insertion to fail with an error")
+        expect(sut, toRetrieve: .empty)
+    }
+
+    func test_delete_hasNoSideEffectsOnEmptyCache() {
+        let sut = makeSUT()
+
+        let deletionError = deleteCache(from: sut)
+
+        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed")
+        expect(sut, toRetrieve: .empty)
+    }
+
+    func test_delete_emptiesPreviouslyInsertedCache() {
+        let sut = makeSUT()
+        insert((uniqueImageFeed().local, Date()), to: sut)
+
+        let deletionError = deleteCache(from: sut)
+
+        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed")
+        expect(sut, toRetrieve: .empty)
+    }
+
+    func test_delete_deliversErrorOnDeletionError() {
+        let noDeletePermissionURL = cachesDirectory()
+        let sut = makeSUT(storeURL: noDeletePermissionURL)
+
+        let deletionError = deleteCache(from: sut)
+
+        XCTAssertNotNil(deletionError, "Expected cache deletion to fail")
+        expect(sut, toRetrieve: .empty)
     }
 }
 
 private extension CodableFeedStoreTests {
 
-    func makeSUT(file: StaticString = #file, line: UInt = #line) -> CodableFeedStore {
-        let sut = CodableFeedStore(storeURL: testSpecificStoreURL())
+    func makeSUT(storeURL: URL? = nil, file: StaticString = #file, line: UInt = #line) -> FeedStore {
+        let sut = CodableFeedStore(storeURL: storeURL ?? testSpecificStoreURL())
         trackForMemoryLeaks(sut, file: file, line: line)
         return sut
+    }
+
+    @discardableResult
+    func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: FeedStore) -> Error? {
+        let exp = expectation(description: "Wait for cache insertion")
+        var insertionError: Error?
+        sut.insert(cache.feed, timestamp: cache.timestamp) { recievedInsertionError in
+            insertionError = recievedInsertionError
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+        return insertionError
+    }
+
+    func deleteCache(from sut: FeedStore) -> Error? {
+        let exp = expectation(description: "Wait for cache deletion")
+        var deletionError: Error?
+        sut.deleteCachedFeed { recievedDeletionError in
+            deletionError = recievedDeletionError
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+        return deletionError
+    }
+
+    func expect(
+        _ sut: FeedStore,
+        toRetrieveTwice expectedResult: RetrieveCachedFeedResult,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        expect(sut, toRetrieve: expectedResult, file: file, line: line)
+        expect(sut, toRetrieve: expectedResult, file: file, line: line)
+    }
+
+    func expect(
+        _ sut: FeedStore,
+        toRetrieve expectedResult: RetrieveCachedFeedResult,
+        file: StaticString = #file,
+        line: UInt = #line
+    ) {
+        let exp = expectation(description: "Wait for cache retrieval")
+
+        sut.retrieve { retievedResult in
+            switch (expectedResult, retievedResult) {
+                case (.empty, .empty),
+                     (.failure, .failure):
+                    break
+                case (.found(let expected), .found(let retrieved)):
+                    XCTAssertEqual(expected.feed, retrieved.feed, file: file, line: line)
+                    XCTAssertEqual(expected.timestamp, retrieved.timestamp, file: file, line: line)
+                default:
+                    XCTFail("Expected to retrieve \(expectedResult), got \(retievedResult) instead", file: file, line: line)
+
+            }
+            exp.fulfill()
+        }
+
+        wait(for: [exp], timeout: 1.0)
     }
 
     func setupEmptyStoreState() {
@@ -163,9 +207,10 @@ private extension CodableFeedStoreTests {
     }
 
     func testSpecificStoreURL() -> URL {
-        return FileManager.default.urls(
-            for: .cachesDirectory,
-            in: .userDomainMask
-        ).first!.appendingPathComponent("\(type(of: self)).store")
+        return cachesDirectory().appendingPathComponent("\(type(of: self)).store")
+    }
+
+    func cachesDirectory() -> URL {
+        return FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 }
