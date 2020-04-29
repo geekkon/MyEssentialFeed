@@ -33,7 +33,7 @@ class MyEssentialFeedAPIEndToEndTests: XCTestCase {
     private func getFeedResult(
         file: StaticString = #file,
         line: UInt = #line,
-        completion: @escaping (LoadFeedResult) -> Void
+        completion: @escaping (FeedLoader.Result) -> Void
     ) {
         let testServerURL = URL(string: "https://essentialdeveloper.com/feed-case-study/test-api/feed")!
         let session = URLSession(configuration: .ephemeral)
